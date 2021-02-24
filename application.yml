@@ -1,2 +1,8 @@
 server:
   port: 8085
+spring:
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: mongo-rest-api-kotlin-demo

@@ -43,43 +43,43 @@ class CreateMessageIntegration @Autowired constructor(
 
         // ACT
 
-        val httpHeaders = HttpHeaders()
-        httpHeaders.contentType = MediaType.APPLICATION_FORM_URLENCODED
-
-        val requestBody = HashMap<String, String>()
-        requestBody.set("data", "123123")
-
-        val headers = HttpHeaders()
-        headers.contentType = MediaType.APPLICATION_JSON
-
-        val json = ObjectMapper().writeValueAsString(requestBody)
-        val entity = HttpEntity(json, headers)
-
-        restTemplate.postForObject(getRootUrl(), entity, String::class.java)
+        val body = CreateMessageRequest("foo")
+        sendCreateMessageRequest(body)
 
         // ASSERT
 
+        val response = sendGetAllMessagesRequest()
+
+        assertEquals(200, response.statusCodeValue)
+        assertNotNull(response.body)
+        assertEquals(1, response.body?.size)
+        assertEquals(response.body?.get(0)?.data, "foo")
+    }
+
+    private fun sendCreateMessageRequest(body: CreateMessageRequest) {
+        val request: HttpEntity<CreateMessageRequest> = HttpEntity<CreateMessageRequest>(
+            body
+        )
+
+        restTemplate.exchange(
+            getRootUrl(),
+            HttpMethod.POST,
+            request,
+            CreateMessageRequest::class.java
+        )
+    }
+
+    private fun sendGetAllMessagesRequest(): ResponseEntity<List<MessageModel>> {
         val mapper = ObjectMapper()
         val type: CollectionType = mapper.typeFactory.constructCollectionType(
             MutableList::class.java, MessageModel::class.java
         )
 
-        val response =  restTemplate.exchange<List<MessageModel>>(
+        return restTemplate.exchange<List<MessageModel>>(
             getRootUrl(),
             HttpMethod.GET,
             null,
             ParameterizedTypeReference.forType(type)
-        )
-
-        assertEquals(200, response.statusCodeValue)
-        assertNotNull(response.body)
-        assertEquals(1, response.body?.size)
-        assertEquals(response.body?.get(0)?.data, "123123")
-    }
-
-    fun createMessage(): CreateMessageRequest {
-        return CreateMessageRequest(
-            data = "Hello"
         )
     }
 

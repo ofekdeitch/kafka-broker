@@ -5,6 +5,7 @@ import com.example.kafka.model.MessageModel
 import com.example.kafka.repository.MessageRepository
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.type.CollectionType
+import org.assertj.core.api.Assertions.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
@@ -80,11 +81,10 @@ class CreateMessageIntegration @Autowired constructor(
         assertNotNull(response.body)
         assertEquals(count, response.body?.size)
 
-        val offsets = response.body?.map{it.offset}!!.sorted()
+        val actualOffsetsSorted = response.body?.map { it.offset }!!.sorted()
+        val expectedOffsets = (0 until 50).map { it.toLong() }
 
-        for (i in 0 until count) {
-            assertEquals(i.toLong(), offsets[i])
-        }
+        assertThat(actualOffsetsSorted).isEqualTo(expectedOffsets)
     }
 
     private fun sendCreateMessageRequest(body: CreateMessageRequest) {

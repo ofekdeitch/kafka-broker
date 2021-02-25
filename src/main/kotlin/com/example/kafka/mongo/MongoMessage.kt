@@ -10,6 +10,8 @@ data class MongoMessage(
     @Id
     val id: ObjectId = ObjectId(),
 
-    val data: String = ""
+    val data: String = "",
+
+    val offset: Long = 0
 
 )

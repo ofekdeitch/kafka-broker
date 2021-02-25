@@ -5,4 +5,4 @@ spring:
     mongodb:
       host: localhost
       port: 27017
-      database: mongo-rest-api-kotlin-demo
+      database: kafka-broker

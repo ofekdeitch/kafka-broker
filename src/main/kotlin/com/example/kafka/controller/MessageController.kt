@@ -14,12 +14,17 @@ class MessageController(
     private val messageRepository: MessageRepository
 ) {
 
+    companion object {
+        var offset = 0L
+    }
+
     @GetMapping
     fun getAllMessages(): ResponseEntity<List<MessageModel>> {
         val messages = messageRepository.findAll().map {
             MessageModel(
                 id = it.id,
-                data = it.data
+                data = it.data,
+                offset = it.offset
             )
         }
 
@@ -28,18 +33,29 @@ class MessageController(
 
     @PostMapping
     fun createMessage(@RequestBody request: CreateMessageRequest): ResponseEntity<MessageModel> {
+        val nextOffset = allocateOffset()
+
         val mongoMessage = messageRepository.save(
             MongoMessage(
-                data = request.data
+                data = request.data,
+                offset = nextOffset
             )
         )
 
         return ResponseEntity(
             MessageModel(
                 id = mongoMessage.id,
-                data = mongoMessage.data
+                data = mongoMessage.data,
+                offset = mongoMessage.offset
             ), HttpStatus.CREATED
         )
     }
 
+    @Synchronized
+    private fun allocateOffset(): Long {
+        val nextOffset = offset
+        offset++
+
+        return nextOffset
+    }
 }

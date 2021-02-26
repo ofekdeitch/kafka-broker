@@ -5,11 +5,15 @@ import com.example.kafka.model.MessageModel
 import com.example.kafka.repository.MessageRepository
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.type.CollectionType
+import org.assertj.core.api.Assertions.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.awaitility.kotlin.await
+import org.awaitility.kotlin.matches
+import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -54,6 +58,33 @@ class CreateMessageIntegration @Autowired constructor(
         assertNotNull(response.body)
         assertEquals(1, response.body?.size)
         assertEquals(response.body?.get(0)?.data, "foo")
+    }
+
+    @Test
+    fun `when 50 messages are created, the offsets should make a range of 0 to 50`() {
+        val count = 50;
+
+        // ACT
+        for (i in 0 until count) {
+            val thread = Thread {
+                val body = CreateMessageRequest("foo")
+                sendCreateMessageRequest(body)
+            }
+            thread.start()
+        }
+
+        // ASSERT
+        await.untilCallTo { messageRepository.count() } matches { currentCount -> currentCount == count.toLong() }
+
+        val response = sendGetAllMessagesRequest()
+        assertEquals(200, response.statusCodeValue)
+        assertNotNull(response.body)
+        assertEquals(count, response.body?.size)
+
+        val actualOffsetsSorted = response.body?.map { it.offset }!!.sorted()
+        val expectedOffsets = (0 until 50).map { it.toLong() }
+
+        assertThat(actualOffsetsSorted).isEqualTo(expectedOffsets)
     }
 
     private fun sendCreateMessageRequest(body: CreateMessageRequest) {

@@ -4,5 +4,6 @@ import org.bson.types.ObjectId
 
 class MessageModel (
     val id: ObjectId,
-    val data: String
+    val data: String,
+    val offset: Long
 )
